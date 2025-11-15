@@ -1,6 +1,6 @@
 # HR-Analytics-Predicting-and-Understanding-Employee-Attrition
 ## 1 Phase - Data Management
-import logreg
+
 #%%
 import pandas as pd
 import numpy as np
@@ -293,7 +293,7 @@ plt.show()
 
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
@@ -437,6 +437,7 @@ print(vif_data)
 
 #%%
 '''
+
 No multicollinearity detected after selecting just the signficant variables.
 
 '''
@@ -462,6 +463,8 @@ plt.show()
 
 # 6.	Obtain classification table and accuracy (%)
 
+#### Aqui tienes valores repetido porque usas el predict pero ya tienes los predicted values arriba, deberias de corregir
+
 predicted_values1= Logit_model_s.predict(X_train_const_s)
 threshold=0.5
 predicted_class1=np.zeros(predicted_values1.shape)
@@ -470,8 +473,6 @@ predicted_class1[predicted_values1>threshold]=1
 from sklearn.metrics import classification_report
 print(classification_report(y_train_s,predicted_class1))
 
-#%% md
-# 7.	Obtain threshold to balance sensitivity and specificity(note that default threshold is 0.5)
 #%%
 fpr, tpr, thresholds =roc_curve(y_train_s,y_pred_probtrain_s)
 # roc_auc = auc(fpr, tpr)
@@ -487,19 +488,8 @@ optimal_threshold
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #%%
+'''
 predicted_values1=logreg.predict_proba(X_train)[::,1]
 threshold=optimal_threshold
 predicted_class1=np.zeros(predicted_values1.shape)
@@ -507,42 +497,116 @@ predicted_class1[predicted_values1>threshold]=1
 
 from sklearn.metrics import classification_report
 print(classification_report(y_train,predicted_class1))
-#%% md
-# TEST DATA - Optimal Threshold (comparison between TRAIN DATA with optimal threshold)
+'''
+
+
+
+
+
+
+
+
+
+
 #%%
-y_pred_probtrain = logreg.predict_proba(X_test)[::,1]
-fpr, tpr, thresholds =roc_curve(y_test,y_pred_probtrain)
-roc_auc = auc(fpr, tpr)
 
-ruc_auc = auc(fpr,tpr)
+# 1️⃣ Add constant to test data (must match model structure)
+X_test_const = sm.add_constant(X_test)
 
-plt.figure();
-lw = 2
-plt.plot(fpr, tpr, color='darkorange',lw=lw, label='ROC curve (area = %0.2f)' % ruc_auc);
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--');
-plt.xlim([0.0, 1.0]);plt.ylim([0.0, 1.05]);
-plt.xlabel('False Positive Rate');plt.ylabel('True Positive Rate');
-plt.title('Receiver operating characteristic');plt.legend(loc="lower right");
+# 2️⃣ Get predicted probabilities for the positive class (Attrition = 1)
+y_pred_prob = Logit_model.predict(X_test_const)
+
+# 3️⃣ Compute ROC curve values
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+
+# 4️⃣ Compute AUC
+auc_value = roc_auc_score(y_test, y_pred_prob)
+print(f"AUC: {auc_value:.3f}")
+
+# 5️⃣ Plot ROC curve
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', label=f"ROC curve (AUC = {auc_value:.3f})")
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve for Attrition Prediction (Test Data)")
+plt.legend(loc="lower right")
 plt.show()
+
+# TO CREATE THE NEXT STEP WHICH IS... CLASSIFICATION REPORT, COPY FROM PREVIOUS STEP ACCORDING TO THE STRUCTURE
+
 #%%
-predicted_values1=logreg.predict_proba(X_test)[::,1]
-threshold=optimal_threshold
+
+# Classification report or confussion matrix for TEST DATA
+
+predicted_values1= Logit_model.predict(X_test_const)
+threshold=0.5
 predicted_class1=np.zeros(predicted_values1.shape)
 predicted_class1[predicted_values1>threshold]=1
 
+from sklearn.metrics import classification_report
 print(classification_report(y_test,predicted_class1))
-#%% md
-# The Area Under ROC Curve (AUC) for train and test data indicate that the model is stable and performed well on test data. The sensitivity value using optimum threshold is 64% for test data
-#%% md
-# Note: Recall or Sensitivity , Precision and Accuracy (To check concepts or add it to the note)
-#%% md
-# variables train data, test data y luego variable coded significantes (creo que solo el train de esas)
-#%% md
-# esto es el tercero con las variables significates. pero no me sale no se porque
-#%%
+
 
 #%%
 
+# HR-Analytics-Predicting-and-Understanding-Employee-Attrition
+## 4 Phase - ML Methods
+
+
+from sklearn.naive_bayes import GaussianNB
+
+
+# Create and fit the Gaussian Naive Bayes modelx
+NBmodel = GaussianNB()
+
+NBmodel.fit(X_train, y_train)
+
+#%%
+y_pred_naives = NBmodel.predict(X_test)
+y_pred_naives
+#%%
+threshold=0.5
+
+predprob_test = NBmodel.predict_proba(X_test)
+pred_test = np.where(predprob_test[:,1] > threshold, 1, 0)
+#%%
+
+print(classification_report(y_test,pred_test))
+
+#%%
+
+auc = roc_auc_score(y_test, predprob_test[:,1])
+print('AUC: %.3f' % auc)
+
+#%%
+
+NBfpr, NBtpr, thresholds = roc_curve(y_test, predprob_test[:,1])
+
+# plot the roc curve for Test data
+plt.figure(figsize=(5, 5))
+lw = 2
+plt.plot(NBfpr, NBtpr, color='darkorange',lw=lw, label='ROC curve (area = %0.3f)' % auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+plt.axis('tight')
+plt.xlabel('False Positive Rate');plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.show()
+
+#%%
+# Confussion Matrix
+from sklearn.metrics import confusion_matrix
+
+cm_n = confusion_matrix(y_test,y_pred_naives)
+print(cm_n)
+#%%
+
+# Heatmap,
+plt.figure(figsize=(7, 7))
+sns.heatmap (cm_n, annot=True)
+plt.xlabel('Predicted')
+plt.ylabel('Truth')
 
 
 
@@ -558,3 +622,172 @@ print(classification_report(y_test,predicted_class1))
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%%
+
+# WORD CLOUD
+
+import tweepy
+import re
+from string import punctuation
+from string import digits
+import string
+
+import nltk
+#nltk.download('all')
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+import itertools
+from wordcloud import WordCloud
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import nltk
+
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+
+#%%
+hrtext = [line.rstrip() for line in open("C:/Users/Windows/Documents/GitHub/HR-Analytics-Predicting-and-Understanding-Employee-Attrition/Dataset/comments.txt", "r", encoding= "utf-8")]
+hrtext[0:5]
+#%%
+import contractions
+
+# Join corpus into one string
+text = " ".join(hrtext).lower()
+
+# Expand contractions
+text = contractions.fix(text)
+
+#%%
+import string
+import re
+
+text = text.translate(str.maketrans("", "", string.punctuation))
+text = re.sub(r'\d+', '', text)
+
+#%%
+stop_words = set(stopwords.words("english"))
+# Add custom stopwords
+stop_words.update(["process", "employee", "work", "job"])  # etc.
+
+words = word_tokenize(text)
+words = [w for w in words if w not in stop_words and len(w) > 2]  # remove very short words
+
+
+#%%
+
+clean_text = " ".join(words)
+
+
+#%%
+import itertools
+
+filtered_text = list(itertools.chain.from_iterable(fs))
+fdist = nltk.FreqDist(filtered_text)
+fdist.most_common(10)
+
+
+#%%
+#WORD CLOUD
+import matplotlib.pyplot as plt
+
+wordcloud = WordCloud(background_color="white").generate(str(filtered_text))
+plt.figure(figsize = (8, 8))
+plt.imshow(wordcloud); plt.axis("off")
+plt.tight_layout(pad = 0); plt.show()
+
+#%%
+# Perform sentiment analysis
+
+import pandas as pd
+import numpy as np
+
+
+a = fdist.most_common(10)
+b = pd.DataFrame(a)
+b = b.rename(columns={0:'Words',1:'Freq'})
+c=b.Words
+y=np.arange(len(c))
+x=b.Freq
+
+plt.barh(y, x, align='center', alpha=0.5)
+plt.yticks(y, c);plt.ylabel('Words')
+plt.xlabel('Frequency');plt.title('Words by Frequency')
+
+plt.show()
+
+
+
+
+
+
+# HAY QUE REVISAR EL WORD CLOUD, FALLAN COSAS DE LOS APOSTROFES
+# PERO DEBERIA EXLCUIR PALABRAS NO USABLES TAMBIEN
+
+
+
+
+#%%
+# Perform sentiment analysis
+
+# Only first time
+import nltk
+# nltk.download('vader_lexicon')
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+sia = SentimentIntensityAnalyzer()
+
+#%%
+comments = hrtext  # original text lines
+#%%
+sentiments = []
+
+for comment in comments:
+    score = sia.polarity_scores(comment)
+    sentiments.append(score)
+
+# Example of first 5
+for i, s in enumerate(sentiments[:5]):
+    print(f"Comment {i+1}: {s}")
+
+#%%
+def label_sentiment(compound):
+    if compound >= 0.05:
+        return "Positive"
+    elif compound <= -0.05:
+        return "Negative"
+    else:
+        return "Neutral"
+
+sentiment_labels = [label_sentiment(s['compound']) for s in sentiments]
+
+# Example: first 10
+for comment, label in zip(comments[:10], sentiment_labels[:10]):
+    print(f"{label}: {comment}")
+
+#%%
+import matplotlib.pyplot as plt
+
+from collections import Counter
+counter = Counter(sentiment_labels)
+
+plt.bar(counter.keys(), counter.values(), color=['green','blue','red'])
+plt.title("Sentiment Distribution of Employee Comments")
+plt.show()
+
+#%%
