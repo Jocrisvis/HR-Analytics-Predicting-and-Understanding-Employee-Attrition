@@ -90,6 +90,7 @@ master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["MaritalStatus"]
 # Boolean being managed
 master_data_1 = master_data_1.map(lambda x: 1 if x is True else 0 if x is False else x)
 master_data_1.sample(3)
+#%%
 
 # Histogram
 import matplotlib.pyplot as plt
@@ -292,14 +293,162 @@ plt.show()
 #%%
 
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 
 #%%
+
+# THIS IS THE RIGHT VERIOSN WITHOUT ENCODING THE DATASET
+
+X_train, X_test = train_test_split(df3, test_size=0.20,random_state = 0)
+
+#%%
+X_train.shape # shape of the array
+#%%
+X_test.shape # shape of the array
+
+#%%
+
+att_model = smf.logit(
+    formula="""Attrition ~ Age + DistanceFromHome + Education + Gender + HourlyRate + MonthlyIncome + 
+    PercentSalaryHike + StockOptionLevel + JobLevel + JobSatisfaction + NumCompaniesWorked + 
+    TotalWorkingYears + TrainingTimesLastYear + WorkLifeBalance + YearsAtCompany + YearsInCurrentRole + 
+    YearsSinceLastPromotion + YearsWithCurrManager + Department_x + EducationField + MaritalStatus + BusinessTravel + JobRole + OverTime""",
+    data=X_train
+).fit()
+#%%
+
+print(att_model.summary())
+
+
+#%%
+# SIGNIFICATN VARIABLES
+
+reduced_model = smf.logit(
+    formula="""
+        Attrition ~ 
+        MaritalStatus + BusinessTravel + JobRole + Gender + OverTime +
+        Age + DistanceFromHome + JobSatisfaction + TotalWorkingYears + NumCompaniesWorked +
+        TrainingTimesLastYear + WorkLifeBalance + YearsAtCompany +
+        YearsInCurrentRole + YearsSinceLastPromotion + YearsWithCurrManager
+    """,
+    data=X_train
+).fit()
+print(reduced_model.summary())
+
+
+#%%
+
+# To check multicolinearity
+# Get design matrix (X1) from your fitted model
+X1 = reduced_model.model.exog
+feature_names = reduced_model.model.exog_names
+
+# Calculate VIF for each predictor
+vif_data = pd.DataFrame()
+vif_data["feature"] = feature_names
+vif_data["VIF"] = [variance_inflation_factor(X1, i) for i in range(X1.shape[1])]
+
+print(vif_data)
+#%%
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob = reduced_model.predict(X_train)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob)
+auc_score = roc_auc_score(X_train['Attrition'], y_pred_prob)
+print(f"AUC: {auc_score:.4f}")
+#%%
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Training Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+#%%
+# 6.	Obtain classification table and accuracy (%)
+
+threshold=0.5
+predicted_class1=np.zeros(y_pred_prob.shape)
+predicted_class1[y_pred_prob>threshold]=1
+
+print(classification_report(X_train['Attrition'],predicted_class1))
+
+#%%
+# TRAIN DATA - Optimal threshold
+
+# 3. Compute Youden's J statistic (tpr - fpr)
+youden_j = tpr - fpr
+
+# 4. Find index of maximum J
+optimal_idx = np.argmax(youden_j)
+
+# 5. Obtain the optimal threshold
+optimal_threshold = thresholds[optimal_idx]
+print("Optimal threshold: ", optimal_threshold)
+
+
+#%%
+# TEST DATA -
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob_t = reduced_model.predict(X_test)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_t)
+auc_score = roc_auc_score(X_test['Attrition'], y_pred_prob_t)
+print(f"AUC: {auc_score:.4f}")
+#%%
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Test Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+#%%
+
+predicted_class2=np.zeros(y_pred_prob_t.shape)
+predicted_class2[y_pred_prob_t>threshold]=1
+
+print(classification_report(X_test['Attrition'],predicted_class2))
+
+#%%
+
+# Confusion matrix: rows = actual, columns = predicted
+cm = confusion_matrix(X_test['Attrition'], predicted_class2)
+print("Confusion Matrix:\n", cm)
+
+
+
+
+
+
+
+
+
+#%%
+'''
+# Quizas no se use por el tema del video, y las variables originales. Este vednria ser el modelo original
 x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
         'HourlyRate', 'MonthlyIncome', 'PercentSalaryHike', 'StockOptionLevel',
         'JobLevel', 'JobSatisfaction', 'NumCompaniesWorked',
@@ -332,59 +481,6 @@ X_train_const = sm.add_constant(X_train)  # add intercept
 Logit_model = sm.Logit(y_train, X_train_const).fit()
 print(Logit_model.summary())
 #%%
-'''
-# Calculate VIF for each explanatory variable
-vif_data = pd.DataFrame()
-vif_data["feature"] = X_train_const.columns
-vif_data["VIF"] = [
-    variance_inflation_factor(X_train_const.values, i)
-    for i in range(X_train_const.shape[1])
-]
-
-print(vif_data)
-'''
-#%%
-'''
-HourlyRate could be causing a high level of multicollinearity for JobLevel and MonthlyIncome. 
-we will proceed to eliminate that variable and  when we create dummies, we do not use all the new columns created. 
-One should be eliminated and being taken as reference.
-
-After a 2nd check, We still have some multicollinearity some variables as Department of Research and Sales.
-'''
-#%%
-'''
-x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
-       'HourlyRate', 'PercentSalaryHike', 'StockOptionLevel',
-       'JobSatisfaction', 'NumCompaniesWorked',
-       'PerformanceRating', 'TotalWorkingYears', 'TrainingTimesLastYear',
-       'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
-       'YearsSinceLastPromotion', 'YearsWithCurrManager', 'OverTime','Travel_Frequently', 'Travel_Rarely',
-       'EducationField_Human Resources',
-       'EducationField_Life Sciences', 'EducationField_Marketing','EducationField_Medical',
-       'EducationField_Technical Degree', 'JobR_Healthcare Representative',
-       'JobR_Human Resources', 'JobR_Laboratory Technician', 'JobR_Manager',
-       'JobR_Manufacturing Director', 'JobR_Research Director',
-       'JobR_Research Scientist', 'JobR_Sales Representative', 'MaritalStat_Divorced',
-       'MaritalStat_Married']
-
-# X and y will be the variables tha we will use for Log. regression. *maybe later we add numbers X2,x3,x3
-X = df3.loc[:,x_variables]
-y = df3.loc[:,'Attrition']
-# When we create dummies, we do not use all the new columns created. One should be eliminated.
-#%%
-# Deparment_sales y Hourlyrate eliminados por la multicolinearidad
-#%%
-#Splitting data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20,random_state = 0)
-#%%
-y_train.shape
-#%%
-df3.shape
-#%%
-X_train_const = sm.add_constant(X_train)  # add intercept
-Logit_model = sm.Logit(y_train, X_train_const).fit()
-print(Logit_model.summary())
-#%%
 
 # Calculate VIF for each explanatory variable
 vif_data = pd.DataFrame()
@@ -396,6 +492,7 @@ vif_data["VIF"] = [
 
 print(vif_data)
 '''
+
 #%%
 '''
 We will select only significant variables and check multicollinearity
@@ -407,7 +504,9 @@ VIF entre 1 y 5 → Moderate multicolinearity, generally accepted.
 VIF > 5 → High multicolinearity, to check variable.
 '''
 #%%
-x_variables_significant =['DistanceFromHome', 'HourlyRate',
+'''
+# Este vendria a ser el modelo signficante y sin multicolineartidad
+x_variables_significant =['DistanceFromHome', #'HourlyRate' (High multicolinearity with MonthlyIncome),
        'MonthlyIncome', 'JobSatisfaction', 'NumCompaniesWorked',
        'TotalWorkingYears', 'TrainingTimesLastYear',
        'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole','YearsSinceLastPromotion',
@@ -435,12 +534,6 @@ vif_data["VIF"] = [
 
 print(vif_data)
 
-#%%
-'''
-
-No multicollinearity detected after selecting just the signficant variables.
-
-'''
 #%%
 # TRAIN DATA - We will obtain AUC and ROC
 
@@ -474,6 +567,8 @@ from sklearn.metrics import classification_report
 print(classification_report(y_train_s,predicted_class1))
 
 #%%
+# TRAIN DATA - Optimal threshold
+
 fpr, tpr, thresholds =roc_curve(y_train_s,y_pred_probtrain_s)
 # roc_auc = auc(fpr, tpr)
 
@@ -484,12 +579,8 @@ optimal_idx = np.argmax(tpr - fpr)
 optimal_threshold = roc.iloc[optimal_idx][4]
 optimal_threshold
 
-# TRAIN DATA - Optimal threshold
-
-
-
 #%%
-'''
+
 predicted_values1=logreg.predict_proba(X_train)[::,1]
 threshold=optimal_threshold
 predicted_class1=np.zeros(predicted_values1.shape)
@@ -497,12 +588,12 @@ predicted_class1[predicted_values1>threshold]=1
 
 from sklearn.metrics import classification_report
 print(classification_report(y_train,predicted_class1))
+
+
 '''
+#%%
 
-
-
-
-
+'''
 
 
 
@@ -546,6 +637,73 @@ predicted_class1[predicted_values1>threshold]=1
 
 from sklearn.metrics import classification_report
 print(classification_report(y_test,predicted_class1))
+
+
+
+
+
+
+
+
+#%%
+
+'''
+#%%
+joveleve could be causing a high level of multicollinearity for HourlyRate and MonthlyIncome. 
+we will proceed to eliminate that variable and  when we create dummies, we do not use all the new columns created. 
+One should be eliminated and being taken as reference.
+
+After a 2nd check, We still have some multicollinearity some variables as Department of Research and HR and manager role.
+
+#%%
+
+'''
+# Este vendria a ser el modelo mixed ese estupido brp
+x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
+        'HourlyRate', 'MonthlyIncome', 'PercentSalaryHike', 'StockOptionLevel',
+        'JobSatisfaction', 'NumCompaniesWorked',
+        'PerformanceRating', 'TotalWorkingYears', 'TrainingTimesLastYear',
+        'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
+        'YearsSinceLastPromotion', 'YearsWithCurrManager', 'OverTime',
+        'Non-Travel', 'Travel_Frequently',
+        'EducationField_Human Resources',
+        'EducationField_Life Sciences', 'EducationField_Marketing',
+        'EducationField_Medical', 'EducationField_Other',
+        'JobR_Healthcare Representative',
+        'JobR_Human Resources', 'JobR_Laboratory Technician',
+        'JobR_Manufacturing Director', 'JobR_Research Director',
+        'JobR_Research Scientist', 'JobR_Sales Executive',
+        'MaritalStat_Divorced', 'MaritalStat_Married']
+
+# X and y will be the variables tha we will use for Log. regression. *maybe later we add numbers X2,x3,x3
+X = df3.loc[:,x_variables]
+y = df3.loc[:,'Attrition']
+# When we create dummies, we do not use all the new columns created. One should be eliminated.
+#%%
+# Deparment_sales y Hourlyrate eliminados por la multicolinearidad
+#%%
+#Splitting data into train and test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20,random_state = 0)
+#%%
+y_train.shape
+#%%
+df3.shape
+#%%
+X_train_const = sm.add_constant(X_train)  # add intercept
+Logit_model = sm.Logit(y_train, X_train_const).fit()
+print(Logit_model.summary())
+#%%
+
+# Calculate VIF for each explanatory variable
+vif_data = pd.DataFrame()
+vif_data["feature"] = X_train_const.columns
+vif_data["VIF"] = [
+    variance_inflation_factor(X_train_const.values, i)
+    for i in range(X_train_const.shape[1])
+]
+
+print(vif_data)
+'''
 
 
 #%%
@@ -611,8 +769,9 @@ plt.ylabel('Truth')
 
 
 
-
-
+#%%
+df3.sample(2)
+master_data.info()
 
 
 
