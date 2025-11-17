@@ -326,6 +326,78 @@ att_model = smf.logit(
 
 print(att_model.summary())
 
+#%%
+
+# To check multicolinearity
+# Get design matrix (X1) from your fitted model
+X0 = att_model.model.exog
+feature_names = att_model.model.exog_names
+
+# Calculate VIF for each predictor
+vif_data = pd.DataFrame()
+vif_data["feature"] = feature_names
+vif_data["VIF"] = [variance_inflation_factor(X0, i) for i in range(X0.shape[1])]
+
+print(vif_data)
+
+#%%
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob_att = att_model.predict(X_train)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob_att)
+auc_score = roc_auc_score(X_train['Attrition'], y_pred_prob_att)
+print(f"AUC: {auc_score:.4f}")
+#%%
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Training Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+#%%
+# TEST DATA -
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob_att1 = att_model.predict(X_test)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_att1)
+auc_score = roc_auc_score(X_test['Attrition'], y_pred_prob_att1)
+print(f"AUC: {auc_score:.4f}")
+#%%
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Test Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #%%
 # SIGNIFICATN VARIABLES
@@ -437,6 +509,83 @@ print(classification_report(X_test['Attrition'],predicted_class2))
 # Confusion matrix: rows = actual, columns = predicted
 cm = confusion_matrix(X_test['Attrition'], predicted_class2)
 print("Confusion Matrix:\n", cm)
+
+#%%
+
+# Extract values
+TN, FP, FN, TP = cm.ravel() # flattens the 2×2 matrix into a 1D array (e.g.: cm[0,0])
+
+# Sensitivity and Specificity formulas
+sensitivity = TP / (TP + FN)
+specificity = TN / (TN + FP)
+
+print('Sensitivity:', sensitivity)
+print('Specificity:', specificity)
+
+
+#%%
+# MIXED VARIABLES
+mixed_model = smf.logit(
+    formula="""Attrition ~ Age + DistanceFromHome + Education + Gender + MonthlyIncome + 
+    PercentSalaryHike + StockOptionLevel + JobSatisfaction + NumCompaniesWorked + 
+    TotalWorkingYears + TrainingTimesLastYear + WorkLifeBalance + YearsAtCompany + YearsInCurrentRole + 
+    YearsSinceLastPromotion + YearsWithCurrManager + MaritalStatus + BusinessTravel + JobRole + OverTime""",
+    data=X_train
+).fit()
+
+
+#%%
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob_mix = mixed_model.predict(X_train)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob_mix)
+auc_score = roc_auc_score(X_train['Attrition'], y_pred_prob_mix)
+print(f"AUC: {auc_score:.4f}")
+#%%
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Training Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+#%%
+# TEST DATA -
+
+# 1. Get predicted probabilities for the positive class (Attrition=1)
+# y_true = df3['Attrition']  # actual values
+y_pred_prob_mix1 = mixed_model.predict(X_test)  # predicted probabilities
+
+# 2. ROC and AUC curve
+fpr, tpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_mix1)
+auc_score = roc_auc_score(X_test['Attrition'], y_pred_prob_mix1)
+print(f"AUC: {auc_score:.4f}")
+#%%
+
+plt.figure(figsize=(8,6))
+plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Test Data')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+
+
+
 
 
 
