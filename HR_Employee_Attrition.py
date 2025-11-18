@@ -80,6 +80,7 @@ master_data_1.EducationField.value_counts()
 master_data_1.Education.value_counts()
 
 #%%
+'''
 # One hot encoding
 master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["BusinessTravel"])).drop('BusinessTravel', axis=1)
 master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["Department_x"], prefix='Department')).drop('Department_x', axis=1)
@@ -90,6 +91,7 @@ master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["MaritalStatus"]
 # Boolean being managed
 master_data_1 = master_data_1.map(lambda x: 1 if x is True else 0 if x is False else x)
 master_data_1.sample(3)
+'''
 #%%
 
 # Histogram
@@ -215,10 +217,11 @@ plt.show()
 df1 = master_data_1.copy() # For Heatmap I
 df2 = master_data_1.copy() # For Heatmap II
 df3 = master_data_1.copy() # For Binary Logistic Regression
+'''
 df4 = master_data_1.copy() # Naïve Bayes Method
 df5 = master_data_1.copy() # Decision Tree
 df6 = master_data_1.copy() # Random Forest Method
-
+'''
 #%%
 pivot_table = df1.pivot_table(
     index='JobSatisfaction',
@@ -347,14 +350,14 @@ print(vif_data)
 y_pred_prob_att = att_model.predict(X_train)  # predicted probabilities
 
 # 2. ROC and AUC curve
-fpr, tpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob_att)
+Lfpr, Ltpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob_att)
 auc_score = roc_auc_score(X_train['Attrition'], y_pred_prob_att)
 print(f"AUC: {auc_score:.4f}")
 #%%
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot(Lfpr, Ltpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
 plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
@@ -371,13 +374,13 @@ plt.show()
 y_pred_prob_att1 = att_model.predict(X_test)  # predicted probabilities
 
 # 2. ROC and AUC curve
-fpr, tpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_att1)
+Lfpr, Ltpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_att1)
 auc_score = roc_auc_score(X_test['Attrition'], y_pred_prob_att1)
 print(f"AUC: {auc_score:.4f}")
 #%%
 
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot(Lfpr, Ltpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
 plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
@@ -385,15 +388,6 @@ plt.title('ROC Curve - Test Data')
 plt.legend(loc='lower right')
 plt.grid(True)
 plt.show()
-
-
-
-
-
-
-
-
-
 
 
 
@@ -435,14 +429,14 @@ print(vif_data)
 y_pred_prob = reduced_model.predict(X_train)  # predicted probabilities
 
 # 2. ROC and AUC curve
-fpr, tpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob)
+lfpr, ltpr, thresholds = roc_curve(X_train['Attrition'], y_pred_prob)
 auc_score = roc_auc_score(X_train['Attrition'], y_pred_prob)
 print(f"AUC: {auc_score:.4f}")
 #%%
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot(lfpr, ltpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
 plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
@@ -464,7 +458,7 @@ print(classification_report(X_train['Attrition'],predicted_class1))
 # TRAIN DATA - Optimal threshold
 
 # 3. Compute Youden's J statistic (tpr - fpr)
-youden_j = tpr - fpr
+youden_j = ltpr - lfpr
 
 # 4. Find index of maximum J
 optimal_idx = np.argmax(youden_j)
@@ -482,13 +476,13 @@ print("Optimal threshold: ", optimal_threshold)
 y_pred_prob_t = reduced_model.predict(X_test)  # predicted probabilities
 
 # 2. ROC and AUC curve
-fpr, tpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_t)
+lfpr, ltpr, thresholds = roc_curve(X_test['Attrition'], y_pred_prob_t)
 auc_score = roc_auc_score(X_test['Attrition'], y_pred_prob_t)
 print(f"AUC: {auc_score:.4f}")
 #%%
 
 plt.figure(figsize=(8,6))
-plt.plot(fpr, tpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
+plt.plot(lfpr, ltpr, color='darkorange', label=f'ROC curve (AUC = {auc_score:.4f})')
 plt.plot([0,1], [0,1], color='blue', linestyle='--', label='Random guess')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
@@ -580,24 +574,33 @@ plt.grid(True)
 plt.show()
 
 
+#%%
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+# HR-Analytics-Predicting-and-Understanding-Employee-Attrition
+## 4 Phase - ML Methods
 
 #%%
-'''
-# Quizas no se use por el tema del video, y las variables originales. Este vednria ser el modelo original
+
+# One hot encoding
+master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["BusinessTravel"])).drop('BusinessTravel', axis=1)
+master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["Department_x"], prefix='Department')).drop('Department_x', axis=1)
+master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["EducationField"], prefix='EducationField')).drop('EducationField', axis=1)
+master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["JobRole"], prefix='JobR')).drop('JobRole', axis=1)
+master_data_1 = master_data_1.join(pd.get_dummies(master_data_1["MaritalStatus"], prefix='MaritalStat')).drop('MaritalStatus', axis=1)
+
+# Boolean being managed
+master_data_1 = master_data_1.map(lambda x: 1 if x is True else 0 if x is False else x)
+master_data_1.sample(3)
+
+df4 = master_data_1.copy() # Naïve Bayes Method
+# df5 = master_data_1.copy() # Decision Tree
+# df6 = master_data_1.copy() # Random Forest Method
+
+#%%
+
+#Naive Bayes Method
+
+from sklearn.naive_bayes import GaussianNB
 x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
         'HourlyRate', 'MonthlyIncome', 'PercentSalaryHike', 'StockOptionLevel',
         'JobLevel', 'JobSatisfaction', 'NumCompaniesWorked',
@@ -614,339 +617,217 @@ x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
         'JobR_Manufacturing Director', 'JobR_Research Director',
         'JobR_Research Scientist', 'JobR_Sales Executive',
         'MaritalStat_Divorced', 'MaritalStat_Married']
-X = df3.loc[:,x_variables]
-y = df3.loc[:,'Attrition']
+X = df4.loc[:,x_variables]
+y = df4.loc[:,'Attrition']
 
-#%%
 
 # # When we create dummies, we do not use all the new columns created. One should be eliminated.
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20,random_state = 0)
-#%%
-y_train.shape # shape of the array
-#%%
-df3.shape # shape of the array
-#%%
-X_train_const = sm.add_constant(X_train)  # add intercept
-Logit_model = sm.Logit(y_train, X_train_const).fit()
-print(Logit_model.summary())
-#%%
-
-# Calculate VIF for each explanatory variable
-vif_data = pd.DataFrame()
-vif_data["feature"] = X_train_const.columns
-vif_data["VIF"] = [
-    variance_inflation_factor(X_train_const.values, i)
-    for i in range(X_train_const.shape[1])
-]
-
-print(vif_data)
-'''
 
 #%%
-'''
-We will select only significant variables and check multicollinearity
-
-We check multicolinearity following the next point as references:
-
-VIF = 1 → There is no multicolinearity
-VIF entre 1 y 5 → Moderate multicolinearity, generally accepted.
-VIF > 5 → High multicolinearity, to check variable.
-'''
-#%%
-'''
-# Este vendria a ser el modelo signficante y sin multicolineartidad
-x_variables_significant =['DistanceFromHome', #'HourlyRate' (High multicolinearity with MonthlyIncome),
-       'MonthlyIncome', 'JobSatisfaction', 'NumCompaniesWorked',
-       'TotalWorkingYears', 'TrainingTimesLastYear',
-       'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole','YearsSinceLastPromotion',
-       'YearsWithCurrManager', 'EducationField_Life Sciences', 'EducationField_Medical',
-       'OverTime','Non-Travel', 'Travel_Frequently', 'MaritalStat_Divorced',
-       'MaritalStat_Married']
-X_sigf = df3.loc[:,x_variables_significant]
-y_sigf = df3.loc[:,'Attrition']
-#%%
-X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X_sigf, y_sigf, test_size=0.20,random_state = 0)
-#%%
-
-X_train_const_s = sm.add_constant(X_train_s)  # agregar intercepto
-Logit_model_s = sm.Logit(y_train_s, X_train_const_s).fit()
-print(Logit_model_s.summary())
-
-#%%
-# Calculate VIF for each explanatory variable
-vif_data = pd.DataFrame()
-vif_data["feature"] = X_train_const_s.columns
-vif_data["VIF"] = [
-    variance_inflation_factor(X_train_const_s.values, i)
-    for i in range(X_train_const_s.shape[1])
-]
-
-print(vif_data)
-
-#%%
-# TRAIN DATA - We will obtain AUC and ROC
-
-y_pred_probtrain_s = Logit_model_s.predict(X_train_const_s)
-fpr, tpr, thresholds =roc_curve(y_train_s,y_pred_probtrain_s)
-
-roc_auc = auc(fpr, tpr)
-
-#%%
-plt.figure();
-lw = 2
-plt.plot(fpr, tpr, color='darkorange',lw=lw, label='ROC curve (area = %0.2f)' % roc_auc);
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--');
-plt.xlim([0.0, 1.0]);plt.ylim([0.0, 1.05]);
-plt.xlabel('False Positive Rate');plt.ylabel('True Positive Rate');
-plt.title('Receiver operating characteristic');plt.legend(loc="lower right");
-plt.show()
-
-#%%
-
-# 6.	Obtain classification table and accuracy (%)
-
-#### Aqui tienes valores repetido porque usas el predict pero ya tienes los predicted values arriba, deberias de corregir
-
-predicted_values1= Logit_model_s.predict(X_train_const_s)
-threshold=0.5
-predicted_class1=np.zeros(predicted_values1.shape)
-predicted_class1[predicted_values1>threshold]=1
-
-from sklearn.metrics import classification_report
-print(classification_report(y_train_s,predicted_class1))
-
-#%%
-# TRAIN DATA - Optimal threshold
-
-fpr, tpr, thresholds =roc_curve(y_train_s,y_pred_probtrain_s)
-# roc_auc = auc(fpr, tpr)
-
-i = np.arange(len(tpr))
-roc = pd.DataFrame({'fpr' : pd.Series(fpr, index=i),'tpr' : pd.Series(tpr, index = i), '1-fpr' : pd.Series(1-fpr, index = i), 'tf' : pd.Series(tpr - (1-fpr), index = i), 'thresholds' : pd.Series(thresholds, index = i)})
-
-optimal_idx = np.argmax(tpr - fpr)
-optimal_threshold = roc.iloc[optimal_idx][4]
-optimal_threshold
-
-#%%
-
-predicted_values1=logreg.predict_proba(X_train)[::,1]
-threshold=optimal_threshold
-predicted_class1=np.zeros(predicted_values1.shape)
-predicted_class1[predicted_values1>threshold]=1
-
-from sklearn.metrics import classification_report
-print(classification_report(y_train,predicted_class1))
-
-
-'''
-#%%
-
-'''
-
-
-
-
-
-#%%
-
-# 1️⃣ Add constant to test data (must match model structure)
-X_test_const = sm.add_constant(X_test)
-
-# 2️⃣ Get predicted probabilities for the positive class (Attrition = 1)
-y_pred_prob = Logit_model.predict(X_test_const)
-
-# 3️⃣ Compute ROC curve values
-fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
-
-# 4️⃣ Compute AUC
-auc_value = roc_auc_score(y_test, y_pred_prob)
-print(f"AUC: {auc_value:.3f}")
-
-# 5️⃣ Plot ROC curve
-plt.figure()
-plt.plot(fpr, tpr, color='darkorange', label=f"ROC curve (AUC = {auc_value:.3f})")
-plt.plot([0, 1], [0, 1], 'k--')
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve for Attrition Prediction (Test Data)")
-plt.legend(loc="lower right")
-plt.show()
-
-# TO CREATE THE NEXT STEP WHICH IS... CLASSIFICATION REPORT, COPY FROM PREVIOUS STEP ACCORDING TO THE STRUCTURE
-
-#%%
-
-# Classification report or confussion matrix for TEST DATA
-
-predicted_values1= Logit_model.predict(X_test_const)
-threshold=0.5
-predicted_class1=np.zeros(predicted_values1.shape)
-predicted_class1[predicted_values1>threshold]=1
-
-from sklearn.metrics import classification_report
-print(classification_report(y_test,predicted_class1))
-
-
-
-
-
-
-
-
-#%%
-
-'''
-#%%
-joveleve could be causing a high level of multicollinearity for HourlyRate and MonthlyIncome. 
-we will proceed to eliminate that variable and  when we create dummies, we do not use all the new columns created. 
-One should be eliminated and being taken as reference.
-
-After a 2nd check, We still have some multicollinearity some variables as Department of Research and HR and manager role.
-
-#%%
-
-'''
-# Este vendria a ser el modelo mixed ese estupido brp
-x_variables =['Age', 'DistanceFromHome', 'Education', 'Gender',
-        'HourlyRate', 'MonthlyIncome', 'PercentSalaryHike', 'StockOptionLevel',
-        'JobSatisfaction', 'NumCompaniesWorked',
-        'PerformanceRating', 'TotalWorkingYears', 'TrainingTimesLastYear',
-        'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
-        'YearsSinceLastPromotion', 'YearsWithCurrManager', 'OverTime',
-        'Non-Travel', 'Travel_Frequently',
-        'EducationField_Human Resources',
-        'EducationField_Life Sciences', 'EducationField_Marketing',
-        'EducationField_Medical', 'EducationField_Other',
-        'JobR_Healthcare Representative',
-        'JobR_Human Resources', 'JobR_Laboratory Technician',
-        'JobR_Manufacturing Director', 'JobR_Research Director',
-        'JobR_Research Scientist', 'JobR_Sales Executive',
-        'MaritalStat_Divorced', 'MaritalStat_Married']
-
-# X and y will be the variables tha we will use for Log. regression. *maybe later we add numbers X2,x3,x3
-X = df3.loc[:,x_variables]
-y = df3.loc[:,'Attrition']
-# When we create dummies, we do not use all the new columns created. One should be eliminated.
-#%%
-# Deparment_sales y Hourlyrate eliminados por la multicolinearidad
-#%%
-#Splitting data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20,random_state = 0)
-#%%
-y_train.shape
-#%%
-df3.shape
-#%%
-X_train_const = sm.add_constant(X_train)  # add intercept
-Logit_model = sm.Logit(y_train, X_train_const).fit()
-print(Logit_model.summary())
-#%%
-
-# Calculate VIF for each explanatory variable
-vif_data = pd.DataFrame()
-vif_data["feature"] = X_train_const.columns
-vif_data["VIF"] = [
-    variance_inflation_factor(X_train_const.values, i)
-    for i in range(X_train_const.shape[1])
-]
-
-print(vif_data)
-'''
-
-
-#%%
-
-# HR-Analytics-Predicting-and-Understanding-Employee-Attrition
-## 4 Phase - ML Methods
-
-
-from sklearn.naive_bayes import GaussianNB
-
 
 # Create and fit the Gaussian Naive Bayes modelx
 NBmodel = GaussianNB()
 
 NBmodel.fit(X_train, y_train)
 
-#%%
-y_pred_naives = NBmodel.predict(X_test)
-y_pred_naives
-#%%
-threshold=0.5
-
-predprob_test = NBmodel.predict_proba(X_test)
-pred_test = np.where(predprob_test[:,1] > threshold, 1, 0)
-#%%
-
-print(classification_report(y_test,pred_test))
 
 #%%
+# Prediction for train and test data
 
-auc = roc_auc_score(y_test, predprob_test[:,1])
-print('AUC: %.3f' % auc)
+y_pred_train = NBmodel.predict_proba(X_train)[:,1]
+y_pred_test = NBmodel.predict_proba(X_test)[:,1]
 
-#%%
+# Train Data
+auc_train = roc_auc_score(y_train, y_pred_train)
+fpr_gnb_train, tpr_gnb_train, _ = roc_curve(y_train, y_pred_train)
 
-NBfpr, NBtpr, thresholds = roc_curve(y_test, predprob_test[:,1])
+# Test Data
+auc_test = roc_auc_score(y_test, y_pred_test)
+fpr_gnb_test, tpr_gnb_test, _ = roc_curve(y_test, y_pred_test)
 
-# plot the roc curve for Test data
-plt.figure(figsize=(5, 5))
+# Plot
+plt.figure(figsize=(8,8))
 lw = 2
-plt.plot(NBfpr, NBtpr, color='darkorange',lw=lw, label='ROC curve (area = %0.3f)' % auc)
+
+# Train curve
+plt.plot(fpr_gnb_train, tpr_gnb_train, color='darkorange', lw=lw,
+         label='Train ROC (AUC = %0.3f)' % auc_train)
+
+# Test curve
+plt.plot(fpr_gnb_test, tpr_gnb_test, color='green', lw=lw,
+         label='Test ROC (AUC = %0.3f)' % auc_test)
+
 plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-plt.axis('tight')
-plt.xlabel('False Positive Rate');plt.ylabel('True Positive Rate')
-plt.title('Receiver operating characteristic')
-plt.legend(loc="lower right")
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Gaussian Naive Bayes')
+plt.legend(loc='lower right')
+plt.grid(True)
 plt.show()
 
 #%%
-# Confussion Matrix
-from sklearn.metrics import confusion_matrix
 
-cm_n = confusion_matrix(y_test,y_pred_naives)
+# Confusion Matrix for TRAIN DATA
+
+y_pred_naives = NBmodel.predict(X_train)
+
+cm_n_train = confusion_matrix(y_train,y_pred_naives)
 print(cm_n)
 #%%
 
-# Heatmap,
-plt.figure(figsize=(7, 7))
-sns.heatmap (cm_n, annot=True)
-plt.xlabel('Predicted')
-plt.ylabel('Truth')
+# Confusion Matrix for TEST DATA
 
+y_pred_naives = NBmodel.predict(X_test)
 
-
+cm_n_test = confusion_matrix(y_test,y_pred_naives)
+print(cm_n2)
 
 #%%
-df3.sample(2)
-master_data.info()
 
+# Decision Tree
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, plot_tree
 
+dtcl = DecisionTreeClassifier(criterion='entropy', min_samples_split= int(len(X_train)*.10))
+dtcl.fit(X_train, y_train)
 
+# Prediction for train and test data
 
+y_pred_train_prob = dtcl.predict_proba(X_train)[:,1]
+y_pred_test_prob = dtcl.predict_proba(X_test)[:,1]
 
+# Train
+auc_train = roc_auc_score(y_train, y_pred_train_prob)
+fpr_dt_train, tpr_dt_train, _ = roc_curve(y_train, y_pred_train_prob)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Test
+auc_test = roc_auc_score(y_test, y_pred_test_prob)
+fpr_dt_test, tpr_dt_test, _ = roc_curve(y_test, y_pred_test_prob)
 
 
 
 #%%
 
+plt.figure(figsize=(6,6))
+lw = 2
+plt.plot(fpr_dt_train, tpr_dt_train, color='darkorange', lw=lw,
+         label='Train ROC (AUC = %0.3f)' % auc_train)
+
+plt.plot(fpr_dt_test, tpr_dt_test, color='green', lw=lw,
+         label='Test ROC (AUC = %0.3f)' % auc_test)
+
+plt.plot([0,1],[0,1], color='navy', lw=lw, linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Decision Tree')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+
+#%%
+
+# Train
+y_pred_dt = dtcl.predict(X_train)
+cm_tr_dt = confusion_matrix(y_train, y_pred_dt)
+TN, FP, FN, TP = cm_tr_dt.ravel()
+print(cm_tr_dt)
+print(f"Accuracy: {(TN+TP)/(TN+FP+FN+TP):.3f}")
+print(f"Sensitivity: {TP/(TP+FN):.3f}")
+print(f"Specificity: {TN/(TN+FP):.3f}\n")
+#%%
+
+# Test
+y_pred_test_class = dtcl.predict(X_test)
+cm_test_dt = confusion_matrix(y_test, y_pred_test_class)
+TN, FP, FN, TP = cm_test_dt.ravel()
+print(cm_test_dt)
+print(f"Accuracy: {(TN+TP)/(TN+FP+FN+TP):.3f}")
+print(f"Sensitivity: {TP/(TP+FN):.3f}")
+print(f"Specificity: {TN/(TN+FP):.3f}")
+
+#%%
+
+# Random Forest Method
+
+#Building Model
+from sklearn.ensemble import RandomForestClassifier
+
+rf = RandomForestClassifier(random_state=0, class_weight='balanced', n_estimators=100, min_samples_split=0.1,
+oob_score=True, max_features='sqrt')
+rf.fit(X_train, y_train)
+
+
+#%%
+# Prediction for train and test data
+y_pred_train = rf.predict_proba(X_train)[:, 1]   # Probabilidad clase 1
+y_pred_test = rf.predict_proba(X_test)[:, 1]
+
+
+# Train Data
+auc_train = roc_auc_score(y_train, y_pred_train)
+fpr_rf_train, tpr_rf_train, _ = roc_curve(y_train, y_pred_train)
+
+# Test Data
+auc_test = roc_auc_score(y_test, y_pred_test)
+fpr_rf_test, tpr_rf_test, _ = roc_curve(y_test, y_pred_test)
+
+# --- PLOT BOTH ---
+plt.figure(figsize=(6,6))
+lw = 2
+
+# Train curve
+plt.plot(fpr_rf_train, tpr_rf_train, color='darkorange', lw=lw,
+         label='Train ROC (AUC = %0.3f)' % auc_train)
+
+# Test curve
+plt.plot(fpr_rf_test, tpr_rf_test, color='green', lw=lw,
+         label='Test ROC (AUC = %0.3f)' % auc_test)
+
+# Diagonal line (random guess)
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Random Forest')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+
+#%%
+
+# Confusion Matrix for TRAIN DATA
+
+y_pred_rf = rf.predict(X_train)
+cm_tr_rf = confusion_matrix(y_train, y_pred_rf)
+
+print(cm_tr_rf)
+
+#%%
+
+# Confusion Matrix for TEST DATA
+
+y_pred_rf_test = rf.predict(X_test)
+cm_test_rf = confusion_matrix(y_test, y_pred_rf_test)
+
+print(cm_test_rf)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%%
 # WORD CLOUD
 
 import tweepy
@@ -1004,6 +885,7 @@ clean_text = " ".join(words)
 
 #%%
 import itertools
+#%%
 
 filtered_text = list(itertools.chain.from_iterable(fs))
 fdist = nltk.FreqDist(filtered_text)
@@ -1020,7 +902,6 @@ plt.imshow(wordcloud); plt.axis("off")
 plt.tight_layout(pad = 0); plt.show()
 
 #%%
-# Perform sentiment analysis
 
 import pandas as pd
 import numpy as np
@@ -1099,3 +980,4 @@ plt.title("Sentiment Distribution of Employee Comments")
 plt.show()
 
 #%%
+'''
