@@ -4,7 +4,6 @@
 #%%
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LogisticRegression
 
 att = pd.read_csv("C:/Users/Windows/PycharmProjects/DSprojects/HR Project/Emp_Attrition.csv")
 demo = pd.read_csv("C:/Users/Windows/PycharmProjects/DSprojects/HR Project/Emp_Demo.csv")
@@ -214,8 +213,8 @@ plt.show()
 
 #%%
 # New df in order to create a heatmap, naives bays, decision tree and random forest.
-df1 = master_data_1.copy() # For Heatmap I
-df2 = master_data_1.copy() # For Heatmap II
+df1 = master_data_1.copy() # For Heatmap, I
+df2 = master_data_1.copy() # For Heatmap, II
 df3 = master_data_1.copy() # For Binary Logistic Regression
 '''
 df4 = master_data_1.copy() # Naïve Bayes Method
@@ -295,11 +294,9 @@ plt.show()
 ''' DIVISION PARA CREAR BINARY LOGISTIC REGRESSION '''
 #%%
 
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from sklearn.metrics import roc_curve, auc, roc_auc_score
-from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
@@ -673,7 +670,7 @@ plt.show()
 y_pred_naives = NBmodel.predict(X_train)
 
 cm_n_train = confusion_matrix(y_train,y_pred_naives)
-print(cm_n)
+print(cm_n_train)
 #%%
 
 # Confusion Matrix for TEST DATA
@@ -681,12 +678,12 @@ print(cm_n)
 y_pred_naives = NBmodel.predict(X_test)
 
 cm_n_test = confusion_matrix(y_test,y_pred_naives)
-print(cm_n2)
+print(cm_n_test)
 
 #%%
 
 # Decision Tree
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, plot_tree
+from sklearn.tree import DecisionTreeClassifier
 
 dtcl = DecisionTreeClassifier(criterion='entropy', min_samples_split= int(len(X_train)*.10))
 dtcl.fit(X_train, y_train)
@@ -813,120 +810,162 @@ cm_test_rf = confusion_matrix(y_test, y_pred_rf_test)
 print(cm_test_rf)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#%%
-# WORD CLOUD
-
-import tweepy
-import re
-from string import punctuation
-from string import digits
-import string
-
-import nltk
-#nltk.download('all')
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
-import itertools
-from wordcloud import WordCloud
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-import nltk
-
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-
-
 #%%
 hrtext = [line.rstrip() for line in open("C:/Users/Windows/Documents/GitHub/HR-Analytics-Predicting-and-Understanding-Employee-Attrition/Dataset/comments.txt", "r", encoding= "utf-8")]
 hrtext[0:5]
 #%%
 import contractions
 
-# Join corpus into one string
+# Join corpus into one string (1 dimension)
 text = " ".join(hrtext).lower()
-
 # Expand contractions
 text = contractions.fix(text)
 
+
 #%%
-import string
+
 import re
-
-text = text.translate(str.maketrans("", "", string.punctuation))
-text = re.sub(r'\d+', '', text)
-
-#%%
-stop_words = set(stopwords.words("english"))
-# Add custom stopwords
-stop_words.update(["process", "employee", "work", "job"])  # etc.
-
-words = word_tokenize(text)
-words = [w for w in words if w not in stop_words and len(w) > 2]  # remove very short words
-
+# No special characters or spaces
+text = re.sub(r'[^a-zA-Z\s]', '', text)
 
 #%%
 
+words = text.split()
+
+#%%
+# no tira no se porque
+from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag
+
+# Load once
+#nltk.download('averaged_perceptron_tagger_eng')
+
+lemmatizer = WordNetLemmatizer()
+
+# Map NLTK POS → WordNet POS
+def map_pos(tag):
+    return {
+        'J': wordnet.ADJ,
+        'V': wordnet.VERB,
+        'N': wordnet.NOUN
+    }.get(tag[0], None)
+
+# Efficient lemmatization
+def fast_lemmatize(words1):  # Chequear si esto funciona o no
+    tagged = pos_tag(words)
+    return [
+        lemmatizer.lemmatize(word, map_pos(tag))
+        for word, tag in tagged
+        if map_pos(tag) is not None
+    ]
+
+# Apply
+words = fast_lemmatize(words)
+
+
+#%%
+# Extended Stop words
+from nltk.corpus import stopwords
+stop_words = set(stopwords.words('english'))
+
+# Add custom words that appear in performance reviews and HR texts
+extra = {
+    "also", "always", "boss", "company", "could",
+    "day", "days",
+    "employee", "employees", "even",
+    "feel", "felt",
+    "get", "give", "given", "got",    "however",
+    "job",    "need", "needs", "never",
+    "make", "management", "manager", "many", "might", "much",
+    "one",    "people", "put",    "really", "role",
+    "should", "sometimes", "something", "someone", "still",
+    "take", "team", "thing", "things", "think",
+    "want", "work", "working", "would",
+    "year", "years"
+}
+
+
+stop_words |= extra
+
+# Apply stopwords
+words = [w for w in words if w not in stop_words]
+
+
+#%%
+# Removing very short words
+
+words = [w for w in words if 3 <= len(w) <= 15]
+
+
+#%%
+from nltk.corpus import stopwords
+
+stop_words = set(stopwords.words('english'))
+words = [word for word in words if word not in stop_words]
+
+#custom_stopwords = ['ejemplo', 'texto']  # palabras que no quieres en tu WordCloud
+#words = [word for word in words if word not in custom_stopwords]
+
+#%%
+# Merge again
 clean_text = " ".join(words)
-
-
-#%%
-import itertools
-#%%
-
-filtered_text = list(itertools.chain.from_iterable(fs))
-fdist = nltk.FreqDist(filtered_text)
-fdist.most_common(10)
-
+clean_text
 
 #%%
-#WORD CLOUD
+
+from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-wordcloud = WordCloud(background_color="white").generate(str(filtered_text))
-plt.figure(figsize = (8, 8))
-plt.imshow(wordcloud); plt.axis("off")
-plt.tight_layout(pad = 0); plt.show()
+wordcloud = WordCloud(width=800, height=400, background_color='white',
+                      max_words=200, colormap='viridis').generate(clean_text)
+
+plt.figure(figsize=(15, 7))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')
+plt.show()
+
 
 #%%
 
-import pandas as pd
-import numpy as np
 
+# PRUEBAA SOLOP PRUEBA
 
-a = fdist.most_common(10)
-b = pd.DataFrame(a)
-b = b.rename(columns={0:'Words',1:'Freq'})
-c=b.Words
-y=np.arange(len(c))
-x=b.Freq
+from textblob import TextBlob
 
-plt.barh(y, x, align='center', alpha=0.5)
-plt.yticks(y, c);plt.ylabel('Words')
-plt.xlabel('Frequency');plt.title('Words by Frequency')
+blob = TextBlob(clean_text)
+sentiment = blob.sentiment
 
+print("Polarity:", sentiment.polarity)   # -1 (negativo) a 1 (positivo)
+print("Subjectivity:", sentiment.subjectivity)  # 0 (objetivo) a 1 (subjetivo)
+
+#%%
+
+from nltk.sentiment import SentimentIntensityAnalyzer
+# nltk.download('vader_lexicon')
+
+sia = SentimentIntensityAnalyzer()
+scores = sia.polarity_scores(clean_text)
+
+print(scores)
+#%%
+
+import matplotlib.pyplot as plt
+
+# Etiquetas y valores
+labels = ['Positive', 'Neutral', 'Negative']
+values = [scores['pos'], scores['neu'], scores['neg']]
+
+# Crear gráfico de barras
+plt.figure(figsize=(6,4))
+plt.bar(labels, values, color=['green', 'grey', 'red'])
+plt.title('Sentiment Distribution (Overall)')
+plt.ylabel('Proportion')
+plt.ylim(0,1)  # Escala 0 a 1, porque VADER devuelve proporciones
 plt.show()
 
 
 
-
-
-
-# HAY QUE REVISAR EL WORD CLOUD, FALLAN COSAS DE LOS APOSTROFES
-# PERO DEBERIA EXLCUIR PALABRAS NO USABLES TAMBIEN
 
 
 
@@ -935,7 +974,6 @@ plt.show()
 # Perform sentiment analysis
 
 # Only first time
-import nltk
 # nltk.download('vader_lexicon')
 from nltk.sentiment import SentimentIntensityAnalyzer
 
@@ -978,6 +1016,3 @@ counter = Counter(sentiment_labels)
 plt.bar(counter.keys(), counter.values(), color=['green','blue','red'])
 plt.title("Sentiment Distribution of Employee Comments")
 plt.show()
-
-#%%
-'''
